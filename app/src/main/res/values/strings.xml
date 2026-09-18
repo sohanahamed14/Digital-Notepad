@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Digital Notepad</string>
+    <string name="tile_scratchpad_label">Quick Note</string>
+    <string name="vault_biometric_title">Unlock Secure Vault</string>
+    <string name="vault_biometric_subtitle">Authenticate using your biometrics to access locked notes</string>
+    <string name="vault_biometric_negative">Cancel</string>
+</resources>
