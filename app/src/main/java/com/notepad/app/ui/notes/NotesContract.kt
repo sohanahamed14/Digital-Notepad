@@ -15,12 +15,15 @@ data class NotesUiState(
     val isSearchActive: Boolean = false,
     val isThemePickerVisible: Boolean = false,
     val currentTheme: AppThemeMode = AppThemeMode.SYSTEM,
-    val isTemplatePickerVisible: Boolean = false
+    val isTemplatePickerVisible: Boolean = false,
+    val selectedTag: String? = null,
+    val availableTags: List<String> = emptyList()
 )
 
 sealed interface NotesUiEvent {
     data class OnSearchQueryChanged(val query: String) : NotesUiEvent
     data class OnCategorySelected(val category: NoteCategory) : NotesUiEvent
+    data class OnTagSelected(val tag: String?) : NotesUiEvent
     data class OnSortOrderChanged(val sortOrder: SortOrder) : NotesUiEvent
     data class OnTogglePin(val noteId: Long) : NotesUiEvent
     data class OnDeleteNote(val noteId: Long) : NotesUiEvent
@@ -34,6 +37,7 @@ sealed interface NotesUiEvent {
     data object OnShowTemplatePicker : NotesUiEvent
     data object OnDismissTemplatePicker : NotesUiEvent
     data class OnTemplateSelected(val template: NoteTemplate) : NotesUiEvent
+    data object OnSettingsClicked : NotesUiEvent
 }
 
 sealed interface NotesUiEffect {
@@ -41,6 +45,7 @@ sealed interface NotesUiEffect {
     data class NavigateToEditorWithTemplate(val template: NoteTemplate) : NotesUiEffect
     data object NavigateToVault : NotesUiEffect
     data object NavigateToTrash : NotesUiEffect
+    data object NavigateToSettings : NotesUiEffect
     data class ShowSnackbar(val message: String) : NotesUiEffect
 }
 

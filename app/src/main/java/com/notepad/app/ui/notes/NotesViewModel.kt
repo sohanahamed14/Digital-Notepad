@@ -25,12 +25,20 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 import kotlinx.coroutines.FlowPreview
+
+private data class TagFilterQuery(
+    val category: NoteCategory,
+    val sortOrder: SortOrder,
+    val tag: String?,
+    val query: String
+)
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
@@ -62,21 +70,33 @@ class NotesViewModel @Inject constructor(
             _uiState.update { it.copy(currentTheme = theme) }
         }.launchIn(viewModelScope)
 
-        // Combine category, sort order, and debounced search query
+        // Combine category, sort order, selected tag, and debounced search query
         combine(
             _uiState.mapDistinct { it.selectedCategory },
             _uiState.mapDistinct { it.sortOrder },
+            _uiState.mapDistinct { it.selectedTag },
             searchQueryFlow.debounce(250).distinctUntilChanged()
-        ) { category, sortOrder, query ->
-            Triple(category, sortOrder, query)
-        }.flatMapLatest { (category, sortOrder, query) ->
-            if (query.isBlank()) {
-                getNotesUseCase(category, sortOrder)
+        ) { category, sortOrder, tag, query ->
+            TagFilterQuery(category, sortOrder, tag, query)
+        }.flatMapLatest { tq ->
+            val baseFlow = if (tq.query.isBlank()) {
+                getNotesUseCase(tq.category, tq.sortOrder)
             } else {
-                searchNotesUseCase(query)
+                searchNotesUseCase(tq.query)
             }
-        }.onEach { notes ->
-            _uiState.update { it.copy(notes = notes, isLoading = false) }
+            baseFlow.map { notes ->
+                val allTags = notes.flatMap { it.tags }.distinct().sorted()
+                val filteredNotes = if (tq.tag == null) notes else notes.filter { it.tags.contains(tq.tag) }
+                Pair(filteredNotes, allTags)
+            }
+        }.onEach { (filteredNotes, allTags) ->
+            _uiState.update {
+                it.copy(
+                    notes = filteredNotes,
+                    availableTags = allTags,
+                    isLoading = false
+                )
+            }
         }.launchIn(viewModelScope)
     }
 
@@ -88,6 +108,9 @@ class NotesViewModel @Inject constructor(
             }
             is NotesUiEvent.OnCategorySelected -> {
                 _uiState.update { it.copy(selectedCategory = event.category) }
+            }
+            is NotesUiEvent.OnTagSelected -> {
+                _uiState.update { it.copy(selectedTag = if (it.selectedTag == event.tag) null else event.tag) }
             }
             is NotesUiEvent.OnSortOrderChanged -> {
                 _uiState.update { it.copy(sortOrder = event.sortOrder) }
@@ -145,6 +168,11 @@ class NotesViewModel @Inject constructor(
                 _uiState.update { it.copy(isTemplatePickerVisible = false) }
                 viewModelScope.launch {
                     _uiEffect.emit(NotesUiEffect.NavigateToEditorWithTemplate(event.template))
+                }
+            }
+            is NotesUiEvent.OnSettingsClicked -> {
+                viewModelScope.launch {
+                    _uiEffect.emit(NotesUiEffect.NavigateToSettings)
                 }
             }
         }

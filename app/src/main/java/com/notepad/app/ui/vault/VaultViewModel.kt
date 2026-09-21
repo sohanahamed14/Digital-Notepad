@@ -27,7 +27,7 @@ class VaultViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(VaultUiState())
     val uiState: StateFlow<VaultUiState> = _uiState.asStateFlow()
 
-    private val _uiEffect = MutableSharedFlow<VaultUiEffect>()
+    private val _uiEffect = MutableSharedFlow<VaultUiEffect>(replay = 1)
     val uiEffect: SharedFlow<VaultUiEffect> = _uiEffect.asSharedFlow()
 
     init {

@@ -36,4 +36,13 @@ data class Note(
 
     val checklistProgress: Float
         get() = if (totalChecklistItems == 0) 0f else completedChecklistItems.toFloat() / totalChecklistItems.toFloat()
+
+    val tags: List<String>
+        get() {
+            val regex = Regex("""(?<=^|\s)#([a-zA-Z0-9_\-]+)""")
+            return regex.findAll("$title $content")
+                .map { it.groupValues[1].lowercase() }
+                .distinct()
+                .toList()
+        }
 }

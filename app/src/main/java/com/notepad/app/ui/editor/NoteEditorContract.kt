@@ -10,7 +10,8 @@ enum class MarkdownAction {
     HEADER,
     CODE_BLOCK,
     CHECKLIST,
-    BULLET_LIST
+    BULLET_LIST,
+    TAG
 }
 
 data class NoteEditorUiState(
@@ -33,7 +34,8 @@ data class NoteEditorUiState(
     val isReminderDialogVisible: Boolean = false,
     val readingTimeMinutes: Int = 1,
     val extractedTasks: List<String> = emptyList(),
-    val keyTakeaways: List<String> = emptyList()
+    val keyTakeaways: List<String> = emptyList(),
+    val isRecordingAudio: Boolean = false
 )
 
 sealed interface NoteEditorUiEvent {

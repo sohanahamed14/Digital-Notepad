@@ -10,5 +10,6 @@ sealed class Screen(val route: String) {
     }
     data object Vault : Screen("vault")
     data object Trash : Screen("trash")
+    data object Settings : Screen("settings")
 }
 

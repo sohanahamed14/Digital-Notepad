@@ -1,5 +1,7 @@
 package com.notepad.app.ui.common
 
+import android.media.MediaPlayer
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -10,18 +12,33 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -31,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.io.File
 
 @Composable
 fun MarkdownRenderer(
@@ -140,6 +158,43 @@ fun MarkdownRenderer(
                 // Empty line
                 trimmed.isEmpty() -> {
                     Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                // Image Attachment: ![alt](path)
+                trimmed.startsWith("![") && trimmed.contains("](") && trimmed.endsWith(")") -> {
+                    val path = trimmed.substringAfter("](").substringBeforeLast(")")
+                    val cleanPath = path.removePrefix("file://")
+                    val file = File(cleanPath)
+                    if (file.exists()) {
+                        val bitmap = remember(cleanPath) {
+                            try { android.graphics.BitmapFactory.decodeFile(cleanPath) } catch (_: Exception) { null }
+                        }
+                        if (bitmap != null) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                            ) {
+                                Image(
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = "Attachment",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentScale = ContentScale.FillWidth
+                                )
+                            }
+                        } else {
+                            Text(text = "🖼 [Image: ${file.name}]", color = MaterialTheme.colorScheme.primary)
+                        }
+                    } else {
+                        Text(text = "🖼 [Image: $path]", color = MaterialTheme.colorScheme.outline)
+                    }
+                }
+
+                // Voice Note: 🎙 [Voice Memo: path]
+                trimmed.startsWith("🎙 [Voice Memo:") && trimmed.endsWith("]") -> {
+                    val audioPath = trimmed.substringAfter("🎙 [Voice Memo:").substringBeforeLast("]").trim()
+                    AudioPlayerItem(filePath = audioPath)
                 }
 
                 // Plain Body Text with inline formatting
@@ -292,3 +347,82 @@ fun parseInlineMarkdown(text: String): AnnotatedString {
         }
     }
 }
+
+@Composable
+private fun AudioPlayerItem(filePath: String) {
+    var isPlaying by remember { mutableStateOf(false) }
+    var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+
+    DisposableEffect(filePath) {
+        onDispose {
+            mediaPlayer?.release()
+            mediaPlayer = null
+        }
+    }
+
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = {
+                    if (isPlaying) {
+                        mediaPlayer?.stop()
+                        mediaPlayer?.release()
+                        mediaPlayer = null
+                        isPlaying = false
+                    } else {
+                        try {
+                            val player = MediaPlayer().apply {
+                                setDataSource(filePath)
+                                setOnCompletionListener {
+                                    isPlaying = false
+                                    it.release()
+                                    mediaPlayer = null
+                                }
+                                prepare()
+                                start()
+                            }
+                            mediaPlayer = player
+                            isPlaying = true
+                        } catch (_: Exception) {
+                            isPlaying = false
+                        }
+                    }
+                },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                    contentDescription = if (isPlaying) "Stop" else "Play",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "🎙 Voice Memo",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = if (isPlaying) "Playing audio..." else "Tap to play recording",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+

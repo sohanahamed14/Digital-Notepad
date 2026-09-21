@@ -29,6 +29,8 @@ class VoiceToTextManager @Inject constructor(
     val state = _state.asStateFlow()
 
     private var speechRecognizer: SpeechRecognizer? = null
+    private var onPartialCallback: ((String) -> Unit)? = null
+    private var onFinalCallback: ((String) -> Unit)? = null
 
     fun startListening(onPartial: (String) -> Unit = {}, onFinal: (String) -> Unit = {}) {
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
@@ -37,6 +39,8 @@ class VoiceToTextManager @Inject constructor(
         }
 
         stopListening()
+        this.onPartialCallback = onPartial
+        this.onFinalCallback = onFinal
 
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
             setRecognitionListener(this@VoiceToTextManager)
@@ -58,6 +62,8 @@ class VoiceToTextManager @Inject constructor(
         speechRecognizer?.stopListening()
         speechRecognizer?.destroy()
         speechRecognizer = null
+        onPartialCallback = null
+        onFinalCallback = null
     }
 
     override fun onReadyForSpeech(params: Bundle?) {
@@ -91,12 +97,14 @@ class VoiceToTextManager @Inject constructor(
         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
         val text = matches?.firstOrNull() ?: ""
         _state.update { it.copy(isListening = false, spokenText = text) }
+        onFinalCallback?.invoke(text)
     }
 
     override fun onPartialResults(partialResults: Bundle?) {
         val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
         val text = matches?.firstOrNull() ?: ""
         _state.update { it.copy(spokenText = text) }
+        onPartialCallback?.invoke(text)
     }
 
     override fun onEvent(eventType: Int, params: Bundle?) {}

@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Notepad — Fast, Secure & Beautiful Android Notes</title>
+  <meta name="description" content="Digital Notepad is a modern Android notes app featuring Biometric Vault security, quick notes, color tags, and clean Material 3 design.">
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-card: rgba(23, 29, 45, 0.7);
+      --bg-card-hover: rgba(30, 38, 59, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(99, 102, 241, 0.35);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #38bdf8;
+      --accent-emerald: #10b981;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 85% 25%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .brand img {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-link:hover {
+      color: var(--text-main);
+    }
+
+    /* Hero Section */
+    .hero {
+      max-width: 1200px;
+      margin: 2.5rem auto 4rem;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      align-items: center;
+      gap: 3.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 2.5rem;
+      }
+      .nav-links {
+        display: none;
+      }
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #a5b4fc;
+      margin-bottom: 1.25rem;
+    }
+
+    .badge-pill-dot {
+      width: 7px;
+      height: 7px;
+      background: #34d399;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #34d399;
+    }
+
+    .hero-title {
+      font-size: 3.25rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (max-width: 600px) {
+      .hero-title {
+        font-size: 2.3rem;
+      }
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #a5b4fc 0%, #38bdf8 50%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      max-width: 540px;
+    }
+
+    @media (max-width: 900px) {
+      .hero-subtitle {
+        margin-left: auto;
+        margin-right: auto;
+      }
+    }
+
+    .cta-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+      .cta-group {
+        justify-content: center;
+      }
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      color: #fff;
+      padding: 0.85rem 1.6rem;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 1rem;
+      text-decoration: none;
+      box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+      transition: all 0.25s ease;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px -5px rgba(99, 102, 241, 0.55);
+      background: linear-gradient(135deg, #7073ff, #5850ec);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      padding: 0.85rem 1.4rem;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Device Mockup */
+    .mockup-container {
+      display: flex;
+      justify-content: center;
+    }
+
+    .phone-frame {
+      width: 310px;
+      height: 600px;
+      background: #0f172a;
+      border: 7px solid #1e293b;
+      border-radius: 42px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 35px rgba(99, 102, 241, 0.25);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .phone-notch {
+      width: 90px;
+      height: 18px;
+      background: #1e293b;
+      border-radius: 0 0 12px 12px;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+
+    .phone-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      margin-top: 1.2rem;
+    }
+
+    .app-header-preview {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .app-title-preview {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .app-search-preview {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .note-card-preview {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 14px;
+      padding: 0.85rem;
+      text-align: left;
+    }
+
+    .note-card-preview.card-yellow {
+      background: rgba(251, 191, 36, 0.12);
+      border-color: rgba(251, 191, 36, 0.3);
+    }
+
+    .note-card-preview.card-purple {
+      background: rgba(168, 85, 247, 0.12);
+      border-color: rgba(168, 85, 247, 0.3);
+    }
+
+    .note-card-preview.card-secure {
+      background: rgba(99, 102, 241, 0.14);
+      border-color: rgba(99, 102, 241, 0.35);
+    }
+
+    .note-title-preview {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.3rem;
+    }
+
+    .note-desc-preview {
+      font-size: 0.72rem;
+      color: #cbd5e1;
+      line-height: 1.4;
+    }
+
+    .note-meta {
+      margin-top: 0.4rem;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Features Grid */
+    .features-section {
+      max-width: 1200px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .section-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      backdrop-filter: blur(16px);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-glow);
+      transform: translateY(-4px);
+    }
+
+    .icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .icon-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+    .icon-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+    .icon-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .icon-indigo { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+
+    .card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      margin-top: 5rem;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+
+    footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    footer a:hover {
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="#" class="brand">
+      <img src="logo.png" alt="Digital Notepad Logo">
+      <span class="brand-title">Digital Notepad</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features" class="nav-link">Features</a>
+      <a href="https://github.com/sohanahamed14/Digital-Notepad" target="_blank" rel="noopener" class="nav-link">GitHub</a>
+      <a href="digital-notepad.apk" class="btn-primary" download="Digital-Notepad.apk">Download APK</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero">
+    <div>
+      <div class="badge-pill">
+        <span class="badge-pill-dot"></span>
+        <span>Version 2.0.0 Available • Android</span>
+      </div>
+      <h1 class="hero-title">
+        Capture Thoughts.<br>
+        <span class="gradient-text">Lock with Biometrics.</span>
+      </h1>
+      <p class="hero-subtitle">
+        A blazing-fast Android notepad built with Jetpack Compose. Keep private notes protected behind fingerprint authentication with beautiful color customization.
+      </p>
+      <div class="cta-group">
+        <a href="digital-notepad.apk" class="btn-primary" download="Digital-Notepad.apk">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Download APK (18 MB)
+        </a>
+        <a href="https://github.com/sohanahamed14/Digital-Notepad" target="_blank" rel="noopener" class="btn-secondary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+    </div>
+
+    <!-- Phone Preview Mockup -->
+    <div class="mockup-container">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="app-header-preview">
+            <span class="app-title-preview">Digital Notepad</span>
+            <span style="font-size:0.8rem; color:#818cf8;">📌 3 Notes</span>
+          </div>
+          <div class="app-search-preview">🔍 Search notes or tags...</div>
+
+          <div class="note-card-preview card-secure">
+            <div class="note-title-preview">
+              <span>🔒 Secret Crypto Keys</span>
+              <span style="font-size:0.7rem; color:#a5b4fc;">Biometric Locked</span>
+            </div>
+            <div class="note-desc-preview">Authenticated with Android BiometricPrompt. Keep keys and passwords safe.</div>
+            <div class="note-meta">
+              <span>Just now</span>
+              <span>Vault</span>
+            </div>
+          </div>
+
+          <div class="note-card-preview card-yellow">
+            <div class="note-title-preview">
+              <span>⚡ Quick Meeting Notes</span>
+              <span>📌</span>
+            </div>
+            <div class="note-desc-preview">Review release cycle and cloud deployment pipelines for Android updates.</div>
+            <div class="note-meta">
+              <span>10:30 AM</span>
+              <span>Work</span>
+            </div>
+          </div>
+
+          <div class="note-card-preview card-purple">
+            <div class="note-title-preview">
+              <span>🎨 Design Ideas</span>
+            </div>
+            <div class="note-desc-preview">Modern material design tokens, pastel accents and dark mode contrasts.</div>
+            <div class="note-meta">
+              <span>Yesterday</span>
+              <span>Ideas</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Features Grid -->
+  <section class="features-section" id="features">
+    <div class="section-header">
+      <h2 class="section-title">Engineered for Power, Privacy & Flow</h2>
+      <p class="section-desc">Minimalist aesthetics combined with robust on-device security and rich capture tools.</p>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="icon-box icon-indigo">☁️</div>
+        <h3>E2EE Cloud Sync</h3>
+        <p>Zero-knowledge encrypted cloud backup (.encbak) using PBKDF2 + AES-256-GCM. Compatible with Google Drive, WebDAV, and Nextcloud.</p>
+      </div>
+
+      <div class="card">
+        <div class="icon-box icon-blue">📱</div>
+        <h3>Home Screen Widgets</h3>
+        <p>Glance sticky note widget for quick reading and instant quick-capture button right on your Android home screen.</p>
+      </div>
+
+      <div class="card">
+        <div class="icon-box icon-purple">🎙️</div>
+        <h3>Rich Media Attachments</h3>
+        <p>Inline photo attachments, embedded voice memo audio player with live visualizer, and finger-drawing sketch canvas.</p>
+      </div>
+
+      <div class="card">
+        <div class="icon-box icon-emerald">🛡️</div>
+        <h3>App Lock & Master PIN</h3>
+        <p>Complement per-note biometric vaults with app-wide biometric or device credential protection on launch.</p>
+      </div>
+
+      <div class="card">
+        <div class="icon-box icon-indigo">📦</div>
+        <h3>Bulk Import / Export</h3>
+        <p>Batch export your library as a Markdown .zip archive or JSON backup. Import effortlessly from Google Keep and standard text files.</p>
+      </div>
+
+      <div class="card">
+        <div class="icon-box icon-blue">🏷️</div>
+        <h3>Tag Tree & Multi-Tagging</h3>
+        <p>Dynamic hashtag indexing (#work, #todo, #ideas) with interactive tag filter chips for instant note discovery.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2026 Digital Notepad. Created by <a href="https://sohanahammed14.vercel.app/" target="_blank" rel="noopener">Sohan Ahammed</a>.</p>
+    <p style="margin-top:0.4rem; font-size:0.8rem; color:#475569;">
+      Hosted on Cloudflare Pages: <a href="https://digital-notepad.pages.dev" target="_blank" rel="noopener">digital-notepad.pages.dev</a>
+    </p>
+  </footer>
+
+</body>
+</html>

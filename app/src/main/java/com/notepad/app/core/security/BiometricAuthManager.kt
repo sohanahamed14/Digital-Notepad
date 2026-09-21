@@ -17,11 +17,17 @@ sealed interface BiometricResult {
 }
 
 @Singleton
-class BiometricAuthManager @Inject constructor(
-    @ApplicationContext private val context: Context
+open class BiometricAuthManager private constructor(
+    private val context: Context?,
+    @Suppress("UNUSED_PARAMETER") marker: Unit?
 ) {
+    @Inject
+    constructor(@ApplicationContext context: Context) : this(context, null)
 
-    fun canAuthenticate(): Boolean {
+    constructor() : this(null, null)
+
+    open fun canAuthenticate(): Boolean {
+        if (context == null) return false
         val biometricManager = BiometricManager.from(context)
         return biometricManager.canAuthenticate(
             BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
@@ -32,7 +38,6 @@ class BiometricAuthManager @Inject constructor(
         activity: FragmentActivity,
         title: String,
         subtitle: String,
-        negativeButtonText: String = "Cancel",
         onResult: (BiometricResult) -> Unit
     ) {
         if (!canAuthenticate()) {

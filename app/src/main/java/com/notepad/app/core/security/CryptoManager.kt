@@ -50,8 +50,9 @@ class CryptoManager @Inject constructor() {
     }
 
     fun decrypt(bytes: ByteArray): ByteArray {
-        if (bytes.isEmpty()) return byteArrayOf()
-        val ivSize = bytes[0].toInt()
+        if (bytes.size <= 1) return byteArrayOf()
+        val ivSize = bytes[0].toInt() and 0xFF
+        if (1 + ivSize > bytes.size) return byteArrayOf()
         val iv = bytes.copyOfRange(1, 1 + ivSize)
         val encrypted = bytes.copyOfRange(1 + ivSize, bytes.size)
 

@@ -1,8 +1,11 @@
 package com.notepad.app.ui.editor
 
+import android.graphics.Bitmap
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.notepad.app.core.media.AttachmentManager
 import com.notepad.app.core.security.CryptoManager
 import com.notepad.app.core.speech.VoiceToTextManager
 import com.notepad.app.core.template.NoteTemplate
@@ -33,6 +36,7 @@ class NoteEditorViewModel @Inject constructor(
     private val toggleVaultLockUseCase: ToggleVaultLockUseCase,
     private val cryptoManager: CryptoManager,
     private val voiceToTextManager: VoiceToTextManager,
+    private val attachmentManager: AttachmentManager,
     private val pdfExportManager: com.notepad.app.core.export.PdfExportManager,
     private val noteInsightsManager: com.notepad.app.core.insights.NoteInsightsManager,
     private val reminderManager: com.notepad.app.core.reminder.ReminderManager,
@@ -246,6 +250,7 @@ class NoteEditorViewModel @Inject constructor(
             MarkdownAction.CODE_BLOCK -> if (currentContent.isEmpty()) "```\n\n```" else "$currentContent\n```\ncode\n```"
             MarkdownAction.CHECKLIST -> if (currentContent.isEmpty()) "- [ ] " else "$currentContent\n- [ ] Task"
             MarkdownAction.BULLET_LIST -> if (currentContent.isEmpty()) "- " else "$currentContent\n- Item"
+            MarkdownAction.TAG -> if (currentContent.isEmpty() || currentContent.endsWith(" ") || currentContent.endsWith("\n")) "${currentContent}#" else "$currentContent #"
         }
         onEvent(NoteEditorUiEvent.OnContentChanged(formatted))
     }
@@ -320,8 +325,49 @@ class NoteEditorViewModel @Inject constructor(
         return if (text.isBlank()) 0 else text.trim().split("\\s+".toRegex()).size
     }
 
+    fun attachImage(uri: Uri) {
+        viewModelScope.launch {
+            val path = attachmentManager.saveImageFromUri(uri)
+            if (path != null) {
+                val current = _uiState.value.content
+                val updated = if (current.isBlank()) "![Image](file://$path)" else "$current\n\n![Image](file://$path)"
+                onEvent(NoteEditorUiEvent.OnContentChanged(updated))
+            }
+        }
+    }
+
+    fun attachSketch(bitmap: Bitmap) {
+        viewModelScope.launch {
+            val path = attachmentManager.saveSketchBitmap(bitmap)
+            if (path != null) {
+                val current = _uiState.value.content
+                val updated = if (current.isBlank()) "![Sketch](file://$path)" else "$current\n\n![Sketch](file://$path)"
+                onEvent(NoteEditorUiEvent.OnContentChanged(updated))
+            }
+        }
+    }
+
+    fun toggleAudioRecording() {
+        if (_uiState.value.isRecordingAudio) {
+            val path = attachmentManager.stopVoiceRecording()
+            _uiState.update { it.copy(isRecordingAudio = false) }
+            if (path != null) {
+                val current = _uiState.value.content
+                val updated = if (current.isBlank()) "🎙 [Voice Memo: $path]" else "$current\n\n🎙 [Voice Memo: $path]"
+                onEvent(NoteEditorUiEvent.OnContentChanged(updated))
+            }
+        } else {
+            val path = attachmentManager.startVoiceRecording()
+            if (path != null) {
+                _uiState.update { it.copy(isRecordingAudio = true) }
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         voiceToTextManager.stopListening()
+        attachmentManager.stopVoiceRecording()
+        attachmentManager.stopAudio()
     }
 }

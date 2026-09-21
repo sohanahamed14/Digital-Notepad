@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.automirrored.filled.Sort
@@ -35,6 +36,8 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -88,7 +91,8 @@ fun NotesListScreen(
     onNavigateToEditor: (Long) -> Unit,
     onNavigateToEditorWithTemplate: (NoteTemplate) -> Unit,
     onNavigateToVault: () -> Unit,
-    onNavigateToTrash: () -> Unit
+    onNavigateToTrash: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -101,6 +105,7 @@ fun NotesListScreen(
                 is NotesUiEffect.NavigateToEditorWithTemplate -> onNavigateToEditorWithTemplate(effect.template)
                 is NotesUiEffect.NavigateToVault -> onNavigateToVault()
                 is NotesUiEffect.NavigateToTrash -> onNavigateToTrash()
+                is NotesUiEffect.NavigateToSettings -> onNavigateToSettings()
                 is NotesUiEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
             }
         }
@@ -128,6 +133,14 @@ fun NotesListScreen(
                     }
                 },
                 actions = {
+                    // Settings Button
+                    IconButton(onClick = { viewModel.onEvent(NotesUiEvent.OnSettingsClicked) }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings"
+                        )
+                    }
+
                     // Theme Picker
                     IconButton(onClick = { viewModel.onEvent(NotesUiEvent.OnShowThemePicker) }) {
                         Icon(
@@ -254,6 +267,44 @@ fun NotesListScreen(
                         onClick = { viewModel.onEvent(NotesUiEvent.OnCategorySelected(category)) },
                         label = { Text(category.displayName) }
                     )
+                }
+            }
+
+            // Tag Filter Chips (#tags)
+            if (state.availableTags.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    state.availableTags.forEach { tag ->
+                        val isSelected = state.selectedTag == tag
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { viewModel.onEvent(NotesUiEvent.OnTagSelected(tag)) },
+                            label = { Text("#$tag") },
+                            leadingIcon = if (isSelected) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            } else {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Default.Tag,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                }
+                            }
+                        )
+                    }
                 }
             }
 
@@ -444,6 +495,34 @@ fun NoteCard(
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
+            }
+
+            // Note Tags (#tags)
+            if (note.tags.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    note.tags.take(3).forEach { tag ->
+                        Text(
+                            text = "#$tag",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    if (note.tags.size > 3) {
+                        Text(
+                            text = "+${note.tags.size - 3}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
             }
 
             // Footer metadata: Category tag, Reminder & Date

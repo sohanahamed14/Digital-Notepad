@@ -140,6 +140,7 @@ class PdfExportManager @Inject constructor(
             type = "application/pdf"
             putExtra(Intent.EXTRA_STREAM, uri)
             putExtra(Intent.EXTRA_SUBJECT, note.title)
+            clipData = android.content.ClipData.newRawUri(note.title, uri)
             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
         }
     }

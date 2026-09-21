@@ -17,16 +17,25 @@ import com.notepad.app.ui.trash.TrashScreen
 import com.notepad.app.ui.trash.TrashViewModel
 import com.notepad.app.ui.vault.VaultScreen
 import com.notepad.app.ui.vault.VaultViewModel
+import com.notepad.app.ui.settings.SettingsScreen
+import com.notepad.app.ui.settings.SettingsViewModel
 
 @Composable
 fun NotepadNavHost(
     navController: NavHostController,
     biometricAuthManager: BiometricAuthManager,
+    initialNoteId: Long? = null,
     modifier: Modifier = Modifier
 ) {
+    val startDestination = if (initialNoteId != null && initialNoteId > 0L) {
+        Screen.NoteEditor.createRoute(initialNoteId)
+    } else {
+        Screen.NotesList.route
+    }
+
     NavHost(
         navController = navController,
-        startDestination = Screen.NotesList.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
         composable(Screen.NotesList.route) {
@@ -44,6 +53,9 @@ fun NotepadNavHost(
                 },
                 onNavigateToTrash = {
                     navController.navigate(Screen.Trash.route)
+                },
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
                 }
             )
         }
@@ -89,6 +101,16 @@ fun NotepadNavHost(
         composable(Screen.Trash.route) {
             val viewModel: TrashViewModel = hiltViewModel()
             TrashScreen(
+                viewModel = viewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Screen.Settings.route) {
+            val viewModel: SettingsViewModel = hiltViewModel()
+            SettingsScreen(
                 viewModel = viewModel,
                 onNavigateBack = {
                     navController.popBackStack()

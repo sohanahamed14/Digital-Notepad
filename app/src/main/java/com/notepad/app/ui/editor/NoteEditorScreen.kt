@@ -3,6 +3,7 @@ package com.notepad.app.ui.editor
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -29,18 +30,23 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.PushPin
@@ -151,6 +157,15 @@ fun NoteEditorScreen(
     }
 
     var showShareMenu by remember { mutableStateOf(false) }
+    var showSketchCanvas by remember { mutableStateOf(false) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.attachImage(uri)
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -280,10 +295,56 @@ fun NoteEditorScreen(
                             IconButton(onClick = { viewModel.onEvent(NoteEditorUiEvent.OnFormatText(MarkdownAction.BULLET_LIST)) }) {
                                 Icon(imageVector = Icons.AutoMirrored.Filled.FormatListBulleted, contentDescription = "Bullet List")
                             }
+                            IconButton(onClick = { viewModel.onEvent(NoteEditorUiEvent.OnFormatText(MarkdownAction.TAG)) }) {
+                                Icon(imageVector = Icons.Default.Tag, contentDescription = "Insert Tag")
+                            }
 
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
 
-                            // Mic Button for Speech-to-Text
+                            // Photo Attachment
+                            IconButton(onClick = {
+                                photoPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            }) {
+                                Icon(imageVector = Icons.Default.Image, contentDescription = "Add Photo")
+                            }
+
+                            // Finger Drawing Sketch
+                            IconButton(onClick = { showSketchCanvas = true }) {
+                                Icon(imageVector = Icons.Default.Brush, contentDescription = "Finger Sketch")
+                            }
+
+                            // Voice Memo Recording (Embedded Player)
+                            IconButton(
+                                onClick = {
+                                    val hasPermission = ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.RECORD_AUDIO
+                                    ) == PackageManager.PERMISSION_GRANTED
+
+                                    if (hasPermission) {
+                                        viewModel.toggleAudioRecording()
+                                    } else {
+                                        audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
+                                },
+                                colors = if (state.isRecordingAudio) {
+                                    IconButtonDefaults.iconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError
+                                    )
+                                } else {
+                                    IconButtonDefaults.iconButtonColors()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (state.isRecordingAudio) Icons.Default.Stop else Icons.Default.GraphicEq,
+                                    contentDescription = "Voice Memo"
+                                )
+                            }
+
+                            // Speech-to-Text Dictation
                             IconButton(
                                 onClick = {
                                     val hasPermission = ContextCompat.checkSelfPermission(
@@ -299,8 +360,8 @@ fun NoteEditorScreen(
                                 },
                                 colors = if (state.isListeningVoice) {
                                     IconButtonDefaults.iconButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.error,
-                                        contentColor = MaterialTheme.colorScheme.onError
+                                        containerColor = MaterialTheme.colorScheme.tertiary,
+                                        contentColor = MaterialTheme.colorScheme.onTertiary
                                     )
                                 } else {
                                     IconButtonDefaults.iconButtonColors()
@@ -308,7 +369,7 @@ fun NoteEditorScreen(
                             ) {
                                 Icon(
                                     imageVector = if (state.isListeningVoice) Icons.Default.Mic else Icons.Default.MicOff,
-                                    contentDescription = "Voice Input"
+                                    contentDescription = "Speech to Text"
                                 )
                             }
                         }
@@ -713,6 +774,16 @@ fun NoteEditorScreen(
                 TextButton(onClick = { viewModel.onEvent(NoteEditorUiEvent.OnDismissReminderDialog) }) {
                     Text("Close")
                 }
+            }
+        )
+    }
+
+    if (showSketchCanvas) {
+        SketchCanvasDialog(
+            onDismiss = { showSketchCanvas = false },
+            onSaveSketch = { bitmap ->
+                viewModel.attachSketch(bitmap)
+                showSketchCanvas = false
             }
         )
     }

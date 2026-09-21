@@ -21,17 +21,15 @@ class ReminderReceiver : BroadcastReceiver() {
         val channelId = "notepad_reminders_channel"
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Note Reminders",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Alerts for scheduled notes and tasks"
-                enableVibration(true)
-            }
-            notificationManager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            channelId,
+            "Note Reminders",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Alerts for scheduled notes and tasks"
+            enableVibration(true)
         }
+        notificationManager.createNotificationChannel(channel)
 
         val openAppIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP

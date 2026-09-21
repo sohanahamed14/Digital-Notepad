@@ -17,6 +17,7 @@ class QuickScratchpadTileService : TileService() {
         }
     }
 
+    @android.annotation.SuppressLint("StartActivityAndCollapseDeprecated")
     override fun onClick() {
         super.onClick()
         val intent = Intent(this, QuickScratchpadActivity::class.java).apply {
