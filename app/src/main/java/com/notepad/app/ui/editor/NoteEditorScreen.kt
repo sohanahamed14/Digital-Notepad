@@ -134,14 +134,23 @@ fun NoteEditorScreen(
                 is NoteEditorUiEffect.NavigateBack -> onNavigateBack()
                 is NoteEditorUiEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is NoteEditorUiEffect.RequestBiometric -> {
-                    if (activity != null) {
+                    if (activity != null && biometricAuthManager.canAuthenticate()) {
                         biometricAuthManager.promptBiometric(
                             activity = activity,
                             title = "Authenticate Vault",
-                            subtitle = "Confirm identity to change note security",
+                            subtitle = "Confirm identity to unlock note",
                             onResult = { result ->
-                                if (result is BiometricResult.Success) {
-                                    effect.onAuthenticated()
+                                when (result) {
+                                    is BiometricResult.Success -> effect.onAuthenticated()
+                                    is BiometricResult.Failed -> {
+                                        // Authentication attempt failed
+                                    }
+                                    is BiometricResult.Error -> {
+                                        // User cancelled or error
+                                    }
+                                    is BiometricResult.Unavailable -> {
+                                        effect.onAuthenticated()
+                                    }
                                 }
                             }
                         )

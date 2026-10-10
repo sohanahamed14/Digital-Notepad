@@ -90,12 +90,16 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun promptUnlock() {
+        if (!biometricAuthManager.canAuthenticate()) {
+            isAppUnlocked = true
+            return
+        }
         biometricAuthManager.promptBiometric(
             activity = this,
             title = "Digital Notepad Locked",
             subtitle = "Authenticate to access your notes"
         ) { result ->
-            if (result is BiometricResult.Success) {
+            if (result is BiometricResult.Success || result is BiometricResult.Unavailable) {
                 isAppUnlocked = true
             }
         }

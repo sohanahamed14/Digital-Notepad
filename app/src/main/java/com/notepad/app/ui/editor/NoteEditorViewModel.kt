@@ -148,11 +148,21 @@ class NoteEditorViewModel @Inject constructor(
                 }
             }
             is NoteEditorUiEvent.OnToggleVaultLock -> {
-                val targetLock = !_uiState.value.isVaultLocked
-                viewModelScope.launch {
-                    _uiEffect.emit(NoteEditorUiEffect.RequestBiometric {
-                        _uiState.update { it.copy(isVaultLocked = targetLock) }
-                    })
+                val currentlyLocked = _uiState.value.isVaultLocked
+                if (!currentlyLocked) {
+                    _uiState.update { it.copy(isVaultLocked = true) }
+                    viewModelScope.launch {
+                        _uiEffect.emit(NoteEditorUiEffect.ShowSnackbar("Note locked in Secure Vault"))
+                    }
+                } else {
+                    viewModelScope.launch {
+                        _uiEffect.emit(NoteEditorUiEffect.RequestBiometric {
+                            _uiState.update { it.copy(isVaultLocked = false) }
+                            viewModelScope.launch {
+                                _uiEffect.emit(NoteEditorUiEffect.ShowSnackbar("Note unlocked"))
+                            }
+                        })
+                    }
                 }
             }
             is NoteEditorUiEvent.OnSaveNote -> {

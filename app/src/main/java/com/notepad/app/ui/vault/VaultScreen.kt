@@ -47,7 +47,9 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.notepad.app.core.security.BiometricAuthManager
 import com.notepad.app.core.security.BiometricResult
+import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,18 +61,41 @@ fun VaultScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val activity = context as? FragmentActivity
 
     fun triggerAuth() {
         if (activity != null) {
+            if (!biometricAuthManager.canAuthenticate()) {
+                viewModel.onEvent(VaultUiEvent.OnAuthenticationSucceeded)
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("No device lock configured. Vault unlocked.")
+                }
+                return
+            }
             biometricAuthManager.promptBiometric(
                 activity = activity,
                 title = "Unlock Secure Vault",
                 subtitle = "Biometric authentication required to view encrypted notes",
                 onResult = { result ->
-                    if (result is BiometricResult.Success) {
-                        viewModel.onEvent(VaultUiEvent.OnAuthenticationSucceeded)
+                    when (result) {
+                        is BiometricResult.Success -> {
+                            viewModel.onEvent(VaultUiEvent.OnAuthenticationSucceeded)
+                        }
+                        is BiometricResult.Error -> {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(result.errString)
+                            }
+                        }
+                        is BiometricResult.Failed -> {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Authentication failed. Please try again.")
+                            }
+                        }
+                        is BiometricResult.Unavailable -> {
+                            viewModel.onEvent(VaultUiEvent.OnAuthenticationSucceeded)
+                        }
                     }
                 }
             )
