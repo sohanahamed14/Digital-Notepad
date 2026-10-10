@@ -5,6 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Digital Notepad — Fast, Secure & Beautiful Android Notes</title>
   <meta name="description" content="Digital Notepad is a modern Android notes app featuring Biometric Vault security, quick notes, color tags, and clean Material 3 design.">
+  <meta name="theme-color" content="#090d16">
+
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://digital-notepad.pages.dev/">
+  <meta property="og:title" content="Digital Notepad — Fast, Secure & Beautiful Android Notes">
+  <meta property="og:description" content="Digital Notepad is a modern Android notes app featuring Biometric Vault security, quick notes, color tags, and clean Material 3 design.">
+  <meta property="og:image" content="https://digital-notepad.pages.dev/logo.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Digital Notepad — Fast, Secure & Beautiful Android Notes">
+  <meta name="twitter:description" content="Digital Notepad is a modern Android notes app featuring Biometric Vault security, quick notes, color tags, and clean Material 3 design.">
+  <meta name="twitter:image" content="https://digital-notepad.pages.dev/logo.png">
+
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +38,10 @@
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
+    }
+
+    html {
+      scroll-behavior: smooth;
     }
 
     * {
@@ -155,7 +174,9 @@
     .gradient-text {
       background: linear-gradient(135deg, #a5b4fc 0%, #38bdf8 50%, #818cf8 100%);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
+      color: transparent;
     }
 
     .hero-subtitle {
@@ -220,6 +241,7 @@
       text-decoration: none;
       border: 1px solid var(--border);
       transition: all 0.2s ease;
+      -webkit-backdrop-filter: blur(8px);
       backdrop-filter: blur(8px);
     }
 
@@ -235,7 +257,8 @@
     }
 
     .phone-frame {
-      width: 310px;
+      width: min(310px, 100%);
+      max-width: 100%;
       height: 600px;
       background: #0f172a;
       border: 7px solid #1e293b;
@@ -375,6 +398,7 @@
       border: 1px solid var(--border);
       border-radius: 20px;
       padding: 2rem;
+      -webkit-backdrop-filter: blur(16px);
       backdrop-filter: blur(16px);
       transition: all 0.3s ease;
       position: relative;
@@ -440,13 +464,13 @@
 
   <!-- Navigation -->
   <nav class="navbar">
-    <a href="#" class="brand">
-      <img src="logo.png" alt="Digital Notepad Logo">
+    <a href="./" class="brand" aria-label="Digital Notepad Home">
+      <img src="logo.png" alt="Digital Notepad Logo" width="42" height="42">
       <span class="brand-title">Digital Notepad</span>
     </a>
     <div class="nav-links">
       <a href="#features" class="nav-link">Features</a>
-      <a href="https://github.com/sohanahamed14/Digital-Notepad" target="_blank" rel="noopener" class="nav-link">GitHub</a>
+      <a href="https://github.com/sohanahamed14/Digital-Notepad" target="_blank" rel="noopener noreferrer" class="nav-link">GitHub</a>
       <a href="digital-notepad.apk" class="btn-primary" download="Digital-Notepad.apk">Download APK</a>
     </div>
   </nav>
@@ -467,15 +491,15 @@
       </p>
       <div class="cta-group">
         <a href="digital-notepad.apk" class="btn-primary" download="Digital-Notepad.apk">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          Download APK (18 MB)
+          Download APK (18.5 MB)
         </a>
-        <a href="https://github.com/sohanahamed14/Digital-Notepad" target="_blank" rel="noopener" class="btn-secondary">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <a href="https://github.com/sohanahamed14/Digital-Notepad" target="_blank" rel="noopener noreferrer" class="btn-secondary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
             <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
           </svg>
           View on GitHub
@@ -582,9 +606,9 @@
 
   <!-- Footer -->
   <footer>
-    <p>© 2026 Digital Notepad. Created by <a href="https://sohanahammed14.vercel.app/" target="_blank" rel="noopener">Sohan Ahammed</a>.</p>
-    <p style="margin-top:0.4rem; font-size:0.8rem; color:#475569;">
-      Hosted on Cloudflare Pages: <a href="https://digital-notepad.pages.dev" target="_blank" rel="noopener">digital-notepad.pages.dev</a>
+    <p>© 2026 Digital Notepad. Created by <a href="https://sohanahammed14.vercel.app/" target="_blank" rel="noopener noreferrer">Sohan Ahammed</a>.</p>
+    <p style="margin-top:0.4rem; font-size:0.8rem; color: var(--text-dim);">
+      Hosted on Cloudflare Pages: <a href="https://digital-notepad.pages.dev" target="_blank" rel="noopener noreferrer">digital-notepad.pages.dev</a>
     </p>
   </footer>
 
