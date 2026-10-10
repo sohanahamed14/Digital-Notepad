@@ -6,3 +6,4 @@
 .DS_Store
 .wrangler/
 web/*.apk
+local.properties
