@@ -1,6 +1,7 @@
 package com.notepad.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -25,17 +26,27 @@ fun NotepadNavHost(
     navController: NavHostController,
     biometricAuthManager: BiometricAuthManager,
     initialNoteId: Long? = null,
+    startNewNote: Boolean = false,
+    startVoiceCapture: Boolean = false,
+    onIntentConsumed: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val startDestination = if (initialNoteId != null && initialNoteId > 0L) {
-        Screen.NoteEditor.createRoute(initialNoteId)
-    } else {
-        Screen.NotesList.route
+    LaunchedEffect(initialNoteId, startNewNote, startVoiceCapture) {
+        if (initialNoteId != null && initialNoteId > 0L) {
+            navController.navigate(Screen.NoteEditor.createRoute(initialNoteId))
+            onIntentConsumed()
+        } else if (startVoiceCapture) {
+            navController.navigate(Screen.NoteEditor.createRoute(0L, startVoice = true))
+            onIntentConsumed()
+        } else if (startNewNote) {
+            navController.navigate(Screen.NoteEditor.createRoute(0L))
+            onIntentConsumed()
+        }
     }
 
     NavHost(
         navController = navController,
-        startDestination = startDestination,
+        startDestination = Screen.NotesList.route,
         modifier = modifier
     ) {
         composable(Screen.NotesList.route) {
@@ -71,6 +82,10 @@ fun NotepadNavHost(
                     type = NavType.StringType
                     defaultValue = ""
                     nullable = true
+                },
+                navArgument("voice") {
+                    type = NavType.BoolType
+                    defaultValue = false
                 }
             )
         ) {

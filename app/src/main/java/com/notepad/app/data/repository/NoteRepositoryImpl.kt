@@ -1,5 +1,7 @@
 package com.notepad.app.data.repository
 
+import android.content.Context
+import com.notepad.app.core.reminder.ReminderManager
 import com.notepad.app.core.security.CryptoManager
 import com.notepad.app.data.local.dao.NoteDao
 import com.notepad.app.data.local.dao.NoteVersionDao
@@ -8,18 +10,23 @@ import com.notepad.app.data.local.entity.NoteVersionEntity
 import com.notepad.app.domain.model.Note
 import com.notepad.app.domain.model.NoteVersion
 import com.notepad.app.domain.repository.NoteRepository
+import com.notepad.app.widget.StickyNoteWidgetProvider
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class NoteRepositoryImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val noteDao: NoteDao,
     private val noteVersionDao: NoteVersionDao,
-    private val cryptoManager: CryptoManager
+    private val cryptoManager: CryptoManager,
+    private val reminderManager: ReminderManager
 ) : NoteRepository {
 
     override fun getActiveNotes(): Flow<List<Note>> {
@@ -87,27 +94,36 @@ class NoteRepositoryImpl @Inject constructor(
             )
         }
 
+        StickyNoteWidgetProvider.notifyNoteChanged(context)
         return finalId
     }
 
     override suspend fun togglePin(id: Long) {
         noteDao.togglePin(id)
+        StickyNoteWidgetProvider.notifyNoteChanged(context)
     }
 
     override suspend fun softDelete(id: Long) {
+        reminderManager.cancelReminder(id)
         noteDao.softDelete(id)
+        StickyNoteWidgetProvider.notifyNoteChanged(context)
     }
 
     override suspend fun restoreFromTrash(id: Long) {
         noteDao.restoreFromTrash(id)
+        StickyNoteWidgetProvider.notifyNoteChanged(context)
     }
 
     override suspend fun hardDelete(id: Long) {
+        reminderManager.cancelReminder(id)
         noteVersionDao.deleteAllVersionsForNote(id)
         noteDao.hardDelete(id)
+        StickyNoteWidgetProvider.notifyNoteChanged(context)
     }
 
     override suspend fun clearTrash() {
+        val trashNotes = noteDao.getTrashNotes().firstOrNull() ?: emptyList()
+        trashNotes.forEach { reminderManager.cancelReminder(it.id) }
         noteDao.clearTrash()
     }
 
@@ -127,6 +143,7 @@ class NoteRepositoryImpl @Inject constructor(
             val decrypted = cryptoManager.decryptString(entity.content)
             noteDao.updateVaultLock(id, isLocked, decrypted)
         }
+        StickyNoteWidgetProvider.notifyNoteChanged(context)
     }
 
     override fun getNoteVersions(noteId: Long): Flow<List<NoteVersion>> {

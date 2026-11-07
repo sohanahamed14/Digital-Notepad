@@ -53,6 +53,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
@@ -208,17 +209,22 @@ fun NotesListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { viewModel.onEvent(NotesUiEvent.OnCreateNoteClicked) },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+            Surface(
                 shape = CircleShape,
-                modifier = Modifier.combinedClickable(
-                    onClick = { },
-                    onLongClick = { viewModel.onEvent(NotesUiEvent.OnShowTemplatePicker) }
-                )
+                color = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shadowElevation = 6.dp,
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .combinedClickable(
+                        onClick = { viewModel.onEvent(NotesUiEvent.OnCreateNoteClicked) },
+                        onLongClick = { viewModel.onEvent(NotesUiEvent.OnShowTemplatePicker) }
+                    )
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Create Note")
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Create Note")
+                }
             }
         }
     ) { innerPadding ->

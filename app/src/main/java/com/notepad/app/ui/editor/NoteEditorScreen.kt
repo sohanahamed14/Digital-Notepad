@@ -13,6 +13,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +28,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FilterChip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
@@ -120,12 +122,21 @@ fun NoteEditorScreen(
     val activity = context as? FragmentActivity
     val sheetState = rememberModalBottomSheetState()
 
+    var pendingAudioAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
     val audioPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            viewModel.onEvent(NoteEditorUiEvent.OnToggleVoiceInput)
+            pendingAudioAction?.invoke()
         }
+        pendingAudioAction = null
+    }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { _ ->
+        viewModel.onEvent(NoteEditorUiEvent.OnShowReminderDialog)
     }
 
     LaunchedEffect(key1 = true) {
@@ -197,7 +208,15 @@ fun NoteEditorScreen(
                     }
 
                     // Scheduled Reminder
-                    IconButton(onClick = { viewModel.onEvent(NoteEditorUiEvent.OnShowReminderDialog) }) {
+                    IconButton(onClick = {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            viewModel.onEvent(NoteEditorUiEvent.OnShowReminderDialog)
+                        }
+                    }) {
                         Icon(
                             imageVector = if (state.reminderAt != null) Icons.Default.AlarmOn else Icons.Default.Alarm,
                             contentDescription = "Set Reminder",
@@ -335,6 +354,7 @@ fun NoteEditorScreen(
                                     if (hasPermission) {
                                         viewModel.toggleAudioRecording()
                                     } else {
+                                        pendingAudioAction = { viewModel.toggleAudioRecording() }
                                         audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                     }
                                 },
@@ -364,6 +384,7 @@ fun NoteEditorScreen(
                                     if (hasPermission) {
                                         viewModel.onEvent(NoteEditorUiEvent.OnToggleVoiceInput)
                                     } else {
+                                        pendingAudioAction = { viewModel.onEvent(NoteEditorUiEvent.OnToggleVoiceInput) }
                                         audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                     }
                                 },
@@ -443,12 +464,36 @@ fun NoteEditorScreen(
                         ) {
                             TextCounter(wordCount = state.wordCount, charCount = state.characterCount)
 
-                            // Category Tag Label
-                            Text(
-                                text = "Category: ${state.category}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            // Category Selector
+                            var showCategoryMenu by remember { mutableStateOf(false) }
+                            Box {
+                                Text(
+                                    text = "Category: ${state.category} ▾",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .clickable { showCategoryMenu = true }
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                                DropdownMenu(
+                                    expanded = showCategoryMenu,
+                                    onDismissRequest = { showCategoryMenu = false }
+                                ) {
+                                    NoteCategory.entries
+                                        .filter { it != NoteCategory.ALL }
+                                        .forEach { cat ->
+                                            DropdownMenuItem(
+                                                text = { Text(cat.displayName) },
+                                                onClick = {
+                                                    viewModel.onEvent(NoteEditorUiEvent.OnCategoryChanged(cat.name))
+                                                    showCategoryMenu = false
+                                                }
+                                            )
+                                        }
+                                }
+                            }
                         }
                     }
                 }

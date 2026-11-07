@@ -39,6 +39,7 @@ data class Note(
 
     val tags: List<String>
         get() {
+            if (isVaultLocked) return emptyList()
             val regex = Regex("""(?<=^|\s)#([a-zA-Z0-9_\-]+)""")
             return regex.findAll("$title $content")
                 .map { it.groupValues[1].lowercase() }

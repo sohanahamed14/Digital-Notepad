@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.notepad.app.core.reminder.ReminderReceiver
 import com.notepad.app.core.security.BiometricAuthManager
@@ -46,6 +47,8 @@ import com.notepad.app.core.theme.NotepadTheme
 import com.notepad.app.core.theme.ThemePreferences
 import com.notepad.app.ui.navigation.NotepadNavHost
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -61,10 +64,13 @@ class MainActivity : FragmentActivity() {
     lateinit var securityPreferences: SecurityPreferences
 
     private var isAppUnlocked by mutableStateOf(false)
+    private var activeNoteId by mutableStateOf<Long?>(null)
+    private var startNewNote by mutableStateOf(false)
+    private var startVoiceCapture by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val initialNoteId = intent?.getLongExtra(ReminderReceiver.EXTRA_NOTE_ID, 0L)?.takeIf { it != 0L }
+        extractIntentExtras(intent)
 
         setContent {
             val appTheme by themePreferences.themeMode.collectAsState(initial = AppThemeMode.SYSTEM)
@@ -82,11 +88,27 @@ class MainActivity : FragmentActivity() {
                     NotepadNavHost(
                         navController = navController,
                         biometricAuthManager = biometricAuthManager,
-                        initialNoteId = initialNoteId
+                        initialNoteId = activeNoteId,
+                        startNewNote = startNewNote,
+                        startVoiceCapture = startVoiceCapture,
+                        onIntentConsumed = {
+                            activeNoteId = null
+                            startNewNote = false
+                            startVoiceCapture = false
+                        }
                     )
                 }
             }
         }
+    }
+
+    private fun extractIntentExtras(intent: android.content.Intent?) {
+        val noteId = intent?.getLongExtra(ReminderReceiver.EXTRA_NOTE_ID, 0L)?.takeIf { it != 0L }
+        val createNote = intent?.getBooleanExtra("EXTRA_CREATE_NOTE", false) ?: false
+        val voice = intent?.getBooleanExtra("EXTRA_START_VOICE", false) ?: false
+        if (noteId != null) activeNoteId = noteId
+        if (createNote) startNewNote = true
+        if (voice) startVoiceCapture = true
     }
 
     private fun promptUnlock() {
@@ -108,13 +130,18 @@ class MainActivity : FragmentActivity() {
     override fun onResume() {
         super.onResume()
         if (!isAppUnlocked) {
-            promptUnlock()
+            lifecycleScope.launch {
+                if (securityPreferences.isAppLockEnabled.first()) {
+                    promptUnlock()
+                }
+            }
         }
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        extractIntentExtras(intent)
     }
 }
 

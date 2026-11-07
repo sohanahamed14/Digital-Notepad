@@ -16,6 +16,7 @@ import com.notepad.app.domain.usecase.RestoreVersionUseCase
 import com.notepad.app.domain.usecase.SaveNoteUseCase
 import com.notepad.app.domain.usecase.ToggleVaultLockUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -45,6 +47,7 @@ class NoteEditorViewModel @Inject constructor(
 
     private val noteId: Long = savedStateHandle.get<Long>("noteId") ?: 0L
     private val templateName: String? = savedStateHandle.get<String>("template")
+    private val startVoice: Boolean = savedStateHandle.get<Boolean>("voice") ?: false
 
     private val _uiState = MutableStateFlow(NoteEditorUiState(id = noteId))
     val uiState: StateFlow<NoteEditorUiState> = _uiState.asStateFlow()
@@ -101,11 +104,20 @@ class NoteEditorViewModel @Inject constructor(
             }
         }
 
+        if (startVoice) {
+            voiceToTextManager.startListening()
+        }
+
         // Observe speech recognition updates
         voiceToTextManager.state.onEach { voiceState ->
             _uiState.update { it.copy(isListeningVoice = voiceState.isListening) }
             if (voiceState.spokenText.isNotBlank() && !voiceState.isListening) {
                 appendSpokenText(voiceState.spokenText)
+                voiceToTextManager.consumeSpokenText()
+            }
+            if (voiceState.error != null) {
+                _uiEffect.emit(NoteEditorUiEffect.ShowSnackbar(voiceState.error))
+                voiceToTextManager.consumeError()
             }
         }.launchIn(viewModelScope)
     }
@@ -222,8 +234,10 @@ class NoteEditorViewModel @Inject constructor(
             }
             is NoteEditorUiEvent.OnExportPdf -> {
                 val note = buildCurrentNote()
-                val intent = pdfExportManager.sharePdf(note)
                 viewModelScope.launch {
+                    val intent = withContext(Dispatchers.IO) {
+                        pdfExportManager.sharePdf(note)
+                    }
                     _uiEffect.emit(NoteEditorUiEffect.LaunchShareIntent(intent))
                 }
             }
@@ -303,6 +317,7 @@ class NoteEditorViewModel @Inject constructor(
     }
 
     private fun saveNoteAndExit() {
+        if (_uiState.value.isSaving) return
         viewModelScope.launch {
             val state = _uiState.value
             _uiState.update { it.copy(isSaving = true) }
@@ -322,7 +337,7 @@ class NoteEditorViewModel @Inject constructor(
             val noteWithId = note.copy(id = if (note.id == 0L) savedId else note.id)
 
             // Schedule reminder if configured
-            if (state.reminderAt != null && state.reminderAt > System.currentTimeMillis()) {
+            if (noteWithId.id != 0L && state.reminderAt != null && state.reminderAt > System.currentTimeMillis()) {
                 reminderManager.scheduleReminder(noteWithId, state.reminderAt)
             }
 

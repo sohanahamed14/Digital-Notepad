@@ -18,10 +18,15 @@ class ReminderManager @Inject constructor(
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     fun scheduleReminder(note: Note, triggerAtMillis: Long) {
+        val safeContent = if (note.isVaultLocked) {
+            "🔒 Locked note reminder"
+        } else {
+            note.content
+        }
         val intent = Intent(context, ReminderReceiver::class.java).apply {
             putExtra(ReminderReceiver.EXTRA_NOTE_ID, note.id)
             putExtra(ReminderReceiver.EXTRA_NOTE_TITLE, note.title)
-            putExtra(ReminderReceiver.EXTRA_NOTE_CONTENT, note.content)
+            putExtra(ReminderReceiver.EXTRA_NOTE_CONTENT, safeContent)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(

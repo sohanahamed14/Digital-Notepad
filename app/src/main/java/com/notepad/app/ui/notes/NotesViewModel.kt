@@ -82,7 +82,27 @@ class NotesViewModel @Inject constructor(
             val baseFlow = if (tq.query.isBlank()) {
                 getNotesUseCase(tq.category, tq.sortOrder)
             } else {
-                searchNotesUseCase(tq.query)
+                searchNotesUseCase(tq.query).map { results ->
+                    val catFiltered = if (tq.category == NoteCategory.ALL) {
+                        results
+                    } else {
+                        results.filter { it.category.equals(tq.category.name, ignoreCase = true) }
+                    }
+                    when (tq.sortOrder) {
+                        SortOrder.DATE_MODIFIED_DESC -> catFiltered.sortedWith(
+                            compareByDescending<com.notepad.app.domain.model.Note> { it.isPinned }.thenByDescending { it.updatedAt }
+                        )
+                        SortOrder.DATE_MODIFIED_ASC -> catFiltered.sortedWith(
+                            compareByDescending<com.notepad.app.domain.model.Note> { it.isPinned }.thenBy { it.updatedAt }
+                        )
+                        SortOrder.TITLE_ASC -> catFiltered.sortedWith(
+                            compareByDescending<com.notepad.app.domain.model.Note> { it.isPinned }.thenBy { it.title.lowercase() }
+                        )
+                        SortOrder.TITLE_DESC -> catFiltered.sortedWith(
+                            compareByDescending<com.notepad.app.domain.model.Note> { it.isPinned }.thenByDescending { it.title.lowercase() }
+                        )
+                    }
+                }
             }
             baseFlow.map { notes ->
                 val allTags = notes.flatMap { it.tags }.distinct().sorted()

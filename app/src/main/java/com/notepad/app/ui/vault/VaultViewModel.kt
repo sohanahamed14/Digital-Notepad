@@ -6,6 +6,7 @@ import com.notepad.app.core.security.CryptoManager
 import com.notepad.app.domain.model.Note
 import com.notepad.app.domain.repository.NoteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -30,6 +31,8 @@ class VaultViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<VaultUiEffect>(replay = 1)
     val uiEffect: SharedFlow<VaultUiEffect> = _uiEffect.asSharedFlow()
 
+    private var vaultNotesJob: Job? = null
+
     init {
         // Auto trigger biometric prompt on entry
         viewModelScope.launch {
@@ -49,6 +52,8 @@ class VaultViewModel @Inject constructor(
                 observeVaultNotes()
             }
             is VaultUiEvent.OnLockVault -> {
+                vaultNotesJob?.cancel()
+                vaultNotesJob = null
                 _uiState.update { it.copy(isUnlocked = false, notes = emptyList()) }
             }
             is VaultUiEvent.OnNoteClicked -> {
@@ -66,7 +71,8 @@ class VaultViewModel @Inject constructor(
     }
 
     private fun observeVaultNotes() {
-        repository.getVaultNotes().onEach { list ->
+        vaultNotesJob?.cancel()
+        vaultNotesJob = repository.getVaultNotes().onEach { list ->
             // In-memory decryption only
             val decryptedList = list.map { note ->
                 val plaintext = cryptoManager.decryptString(note.content)

@@ -1,7 +1,9 @@
 package com.notepad.app.core.backup
 
 import android.content.Context
+import com.notepad.app.core.security.CryptoManager
 import com.notepad.app.domain.model.Note
+import com.notepad.app.domain.model.NoteCategory
 import com.notepad.app.domain.repository.NoteRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -34,12 +36,16 @@ data class ImportResult(
 @Singleton
 open class BackupManager private constructor(
     private val context: Context?,
+    private val cryptoManager: CryptoManager?,
     @Suppress("UNUSED_PARAMETER") marker: Unit?
 ) {
     @Inject
-    constructor(@ApplicationContext context: Context) : this(context, null)
+    constructor(
+        @ApplicationContext context: Context,
+        cryptoManager: CryptoManager
+    ) : this(context, cryptoManager, null)
 
-    constructor() : this(null, null)
+    constructor() : this(null, null, null)
 
     private val secureRandom = SecureRandom()
 
@@ -64,7 +70,10 @@ open class BackupManager private constructor(
     open suspend fun exportEncryptedBackup(repository: NoteRepository, outputStream: OutputStream, passphrase: String): Int = withContext(Dispatchers.IO) {
         require(passphrase.isNotEmpty()) { "Passphrase cannot be empty" }
         val activeNotes = repository.getActiveNotes().first()
-        val vaultNotes = repository.getVaultNotes().first()
+        val vaultNotes = repository.getVaultNotes().first().map { note ->
+            val decrypted = cryptoManager?.decryptString(note.content) ?: note.content
+            note.copy(content = decrypted)
+        }
         val allNotes = activeNotes + vaultNotes
         val root = buildJsonForNotes(allNotes)
         val plainBytes = root.toString().toByteArray(Charsets.UTF_8)
@@ -168,7 +177,7 @@ open class BackupManager private constructor(
                             id = 0L,
                             title = title,
                             content = content,
-                            category = "KEEP_IMPORT",
+                            category = NoteCategory.GENERAL.name,
                             createdAt = System.currentTimeMillis(),
                             updatedAt = System.currentTimeMillis()
                         )
@@ -180,15 +189,24 @@ open class BackupManager private constructor(
 
             // Plain text or Markdown file
             val lines = text.lines()
-            val firstLine = lines.firstOrNull { it.isNotBlank() }?.trim()?.removePrefix("#")?.trim()
+            val firstNonBlankIndex = lines.indexOfFirst { it.isNotBlank() }
+            val firstLine = if (firstNonBlankIndex != -1) {
+                lines[firstNonBlankIndex].trim().removePrefix("#").trim()
+            } else {
+                null
+            }
             val title = if (!firstLine.isNullOrBlank()) firstLine else fileName.substringBeforeLast(".")
-            val content = if (lines.size > 1) lines.drop(1).joinToString("\n").trim() else text
+            val content = if (firstNonBlankIndex != -1 && lines.size > firstNonBlankIndex + 1) {
+                lines.drop(firstNonBlankIndex + 1).joinToString("\n").trim()
+            } else {
+                text.trim()
+            }
 
             val note = Note(
                 id = 0L,
                 title = title,
                 content = content,
-                category = "IMPORTED",
+                category = NoteCategory.GENERAL.name,
                 createdAt = System.currentTimeMillis(),
                 updatedAt = System.currentTimeMillis()
             )

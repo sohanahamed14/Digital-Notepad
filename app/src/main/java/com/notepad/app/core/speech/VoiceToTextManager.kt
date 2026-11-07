@@ -107,5 +107,13 @@ class VoiceToTextManager @Inject constructor(
         onPartialCallback?.invoke(text)
     }
 
+    fun consumeSpokenText() {
+        _state.update { it.copy(spokenText = "") }
+    }
+
+    fun consumeError() {
+        _state.update { it.copy(error = null) }
+    }
+
     override fun onEvent(eventType: Int, params: Bundle?) {}
 }

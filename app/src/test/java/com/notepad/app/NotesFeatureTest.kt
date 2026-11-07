@@ -124,6 +124,27 @@ class NotesFeatureTest {
 
     @Test
     fun testSearchAndCategoryFiltering() = runTest(testDispatcher) {
+        val searchNoteWork = Note(id = 20, title = "Shopping Work", category = NoteCategory.WORK.name)
+        val searchNotePersonal = Note(id = 21, title = "Shopping Home", category = NoteCategory.PERSONAL.name)
+        fakeRepository = object : NoteRepository {
+            override fun getActiveNotes(): Flow<List<Note>> = flowOf(listOf(searchNoteWork, searchNotePersonal))
+            override fun getVaultNotes(): Flow<List<Note>> = flowOf(emptyList())
+            override fun getTrashNotes(): Flow<List<Note>> = flowOf(emptyList())
+            override fun getNoteById(id: Long): Flow<Note?> = flowOf(null)
+            override suspend fun getNoteByIdDirect(id: Long): Note? = null
+            override fun searchNotes(query: String): Flow<List<Note>> = flowOf(listOf(searchNoteWork, searchNotePersonal))
+            override suspend fun saveNote(note: Note, createSnapshot: Boolean): Long = 10L
+            override suspend fun togglePin(id: Long) {}
+            override suspend fun softDelete(id: Long) {}
+            override suspend fun restoreFromTrash(id: Long) {}
+            override suspend fun hardDelete(id: Long) {}
+            override suspend fun clearTrash() {}
+            override suspend fun purgeOldTrash(daysThreshold: Int) {}
+            override suspend fun toggleVaultLock(id: Long, isLocked: Boolean, newContent: String) {}
+            override fun getNoteVersions(noteId: Long): Flow<List<NoteVersion>> = flowOf(emptyList())
+            override suspend fun restoreNoteVersion(version: NoteVersion) {}
+        }
+
         val viewModel = createViewModel()
 
         viewModel.onEvent(NotesUiEvent.OnSearchQueryChanged("Shopping"))
@@ -135,6 +156,10 @@ class NotesFeatureTest {
 
         viewModel.onEvent(NotesUiEvent.OnSortOrderChanged(SortOrder.TITLE_ASC))
         assertEquals(SortOrder.TITLE_ASC, viewModel.uiState.value.sortOrder)
+
+        advanceUntilIdle()
+        assertEquals(1, viewModel.uiState.value.notes.size)
+        assertEquals("Shopping Work", viewModel.uiState.value.notes[0].title)
     }
 
     @Test

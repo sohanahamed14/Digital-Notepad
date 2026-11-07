@@ -49,7 +49,9 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -70,6 +72,7 @@ fun SketchCanvasDialog(
     val currentPoints = remember { mutableStateListOf<Offset>() }
     var currentColor by remember { mutableStateOf(Color.Black) }
     var currentStrokeWidth by remember { mutableFloatStateOf(8f) }
+    var canvasSize by remember { mutableStateOf(IntSize(800, 800)) }
 
     val colors = listOf(
         Color.Black,
@@ -162,6 +165,11 @@ fun SketchCanvasDialog(
                     Canvas(
                         modifier = Modifier
                             .fillMaxSize()
+                            .onSizeChanged { size ->
+                                if (size.width > 0 && size.height > 0) {
+                                    canvasSize = size
+                                }
+                            }
                             .pointerInput(Unit) {
                                 detectDragGestures(
                                     onDragStart = { offset ->
@@ -235,7 +243,9 @@ fun SketchCanvasDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            val bitmap = Bitmap.createBitmap(800, 800, Bitmap.Config.ARGB_8888)
+                            val bmpWidth = canvasSize.width.coerceAtLeast(1)
+                            val bmpHeight = canvasSize.height.coerceAtLeast(1)
+                            val bitmap = Bitmap.createBitmap(bmpWidth, bmpHeight, Bitmap.Config.ARGB_8888)
                             val canvas = android.graphics.Canvas(bitmap)
                             canvas.drawColor(android.graphics.Color.WHITE)
 

@@ -277,7 +277,7 @@ class SettingsFeatureTest {
         assertEquals(1, savedNotesList.size)
         assertEquals("Grocery Shopping", savedNotesList[0].title)
         assertTrue(savedNotesList[0].content.contains("Milk"))
-        assertEquals("KEEP_IMPORT", savedNotesList[0].category)
+        assertEquals("GENERAL", savedNotesList[0].category)
     }
 
     @Test

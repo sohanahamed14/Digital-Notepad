@@ -40,4 +40,13 @@ class NoteModelTest {
         assertEquals(false, note.isVaultLocked)
         assertEquals(false, note.isDeleted)
     }
+
+    @Test
+    fun testVaultLockedNoteHidesTags() {
+        val unlockedNote = Note(title = "Secret #vault", content = "Password #crypto", isVaultLocked = false)
+        assertEquals(listOf("vault", "crypto"), unlockedNote.tags)
+
+        val lockedNote = Note(title = "Secret #vault", content = "Password #crypto", isVaultLocked = true)
+        assertEquals(emptyList<String>(), lockedNote.tags)
+    }
 }

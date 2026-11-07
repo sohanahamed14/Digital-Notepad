@@ -122,12 +122,17 @@ fun TrashScreen(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
+                                    val displayContent = if (note.isVaultLocked) {
+                                        "🔒 [Locked in Biometric Vault]"
+                                    } else {
+                                        note.content
+                                    }
                                     Text(
-                                        text = note.content,
+                                        text = displayContent,
                                         style = MaterialTheme.typography.bodySmall,
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
-                                        color = noteBodyColor
+                                        color = if (note.isVaultLocked) MaterialTheme.colorScheme.primary else noteBodyColor
                                     )
                                 }
 
